@@ -1,4 +1,4 @@
-# 🧹 Automated Data Cleaning Tool
+# Automated Data Cleaning Tool
 
 A full-stack web app to upload messy CSV/Excel datasets, detect data quality issues, apply cleaning transformations, and download the cleaned result.
 
