@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
+import type { FileRejection } from 'react-dropzone'
 import axios from 'axios'
 import type { UploadData } from '../App'
 
@@ -31,7 +32,7 @@ export default function UploadZone({ onUploaded, apiBase }: Props) {
     }
   }, [apiBase, onUploaded])
 
-  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: FileRejection[]) => {
     if (rejected.length > 0) { setFileError(rejected[0].errors[0].message); return }
     if (accepted.length > 0) upload(accepted[0])
   }, [upload])
