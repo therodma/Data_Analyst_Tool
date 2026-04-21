@@ -1,5 +1,7 @@
 # Automated Data Cleaning Tool
 
+🌐 **Live App**: https://therodma.github.io/Data_Cleaning_Tool/
+
 A full-stack web app to upload messy CSV/Excel datasets, detect data quality issues, apply cleaning transformations, and download the cleaned result.
 
 ## Tech Stack
