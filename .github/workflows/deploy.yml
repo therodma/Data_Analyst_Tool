@@ -25,11 +25,11 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --prefer-offline || npm install
         working-directory: frontend
 
       - name: Build
-        run: npm run build
+        run: npx vite build
         working-directory: frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
