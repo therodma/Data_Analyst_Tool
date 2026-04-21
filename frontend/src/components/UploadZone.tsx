@@ -3,10 +3,7 @@ import { useDropzone } from 'react-dropzone'
 import axios from 'axios'
 import type { UploadData } from '../App'
 
-type Props = {
-  onUploaded: (data: UploadData) => void
-  apiBase: string
-}
+type Props = { onUploaded: (data: UploadData) => void; apiBase: string }
 
 const MAX_SIZE = 50 * 1024 * 1024
 
@@ -15,43 +12,29 @@ export default function UploadZone({ onUploaded, apiBase }: Props) {
   const [uploading, setUploading] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
 
-  const upload = useCallback(
-    async (file: File) => {
-      setFileError(null)
-      setUploading(true)
-      setProgress(0)
-      const form = new FormData()
-      form.append('file', file)
-      try {
-        const res = await axios.post(`${apiBase}/upload`, form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          onUploadProgress: (e) => {
-            if (e.total) setProgress(Math.round((e.loaded / e.total) * 100))
-          },
-        })
-        onUploaded(res.data.data)
-      } catch (e) {
-        const msg = axios.isAxiosError(e)
-          ? e.response?.data?.detail?.errors?.[0] ?? e.message
-          : String(e)
-        setFileError(msg)
-      } finally {
-        setUploading(false)
-      }
-    },
-    [apiBase, onUploaded]
-  )
+  const upload = useCallback(async (file: File) => {
+    setFileError(null)
+    setUploading(true)
+    setProgress(0)
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      const res = await axios.post(`${apiBase}/upload`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => { if (e.total) setProgress(Math.round((e.loaded / e.total) * 100)) },
+      })
+      onUploaded(res.data.data)
+    } catch (e) {
+      setFileError(axios.isAxiosError(e) ? e.response?.data?.detail?.errors?.[0] ?? e.message : String(e))
+    } finally {
+      setUploading(false)
+    }
+  }, [apiBase, onUploaded])
 
-  const onDrop = useCallback(
-    (accepted: File[], rejected: { errors: { message: string }[] }[]) => {
-      if (rejected.length > 0) {
-        setFileError(rejected[0].errors[0].message)
-        return
-      }
-      if (accepted.length > 0) upload(accepted[0])
-    },
-    [upload]
-  )
+  const onDrop = useCallback((accepted: File[], rejected: { errors: { message: string }[] }[]) => {
+    if (rejected.length > 0) { setFileError(rejected[0].errors[0].message); return }
+    if (accepted.length > 0) upload(accepted[0])
+  }, [upload])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -62,54 +45,61 @@ export default function UploadZone({ onUploaded, apiBase }: Props) {
   })
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="w-full max-w-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">Upload your dataset</h2>
-        <p className="text-gray-500 text-center mb-8 text-sm">
-          Supports CSV and Excel (.xlsx) files up to 50 MB
+    <div className="flex flex-col items-center justify-center min-h-[62vh]">
+      <div className="w-full max-w-lg text-center">
+        <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#2c2c2c', fontSize: '2rem', fontWeight: 500 }} className="mb-2">
+          Upload your dataset
+        </h2>
+        <p style={{ color: '#9c8f80', fontSize: '0.875rem', fontWeight: 300 }} className="mb-10">
+          CSV and Excel files up to 50 MB
         </p>
 
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors ${
-            isDragActive
-              ? 'border-blue-500 bg-blue-50'
-              : uploading
-              ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-              : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50'
-          }`}
+          style={{
+            border: `2px dashed ${isDragActive ? '#9c8f80' : '#c8b89a'}`,
+            borderRadius: '16px',
+            padding: '3.5rem 2rem',
+            backgroundColor: isDragActive ? '#ede8e0' : uploading ? '#f5f1ec' : '#faf8f5',
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+          }}
         >
           <input {...getInputProps()} />
-          <div className="text-5xl mb-4">{isDragActive ? '📂' : '📁'}</div>
+
           {uploading ? (
-            <div className="space-y-3">
-              <p className="text-gray-600 font-medium">Uploading...</p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+            <div className="space-y-4">
+              <div style={{ fontSize: '2rem' }}>⏳</div>
+              <p style={{ color: '#7a6f62', fontWeight: 400, fontSize: '0.9rem' }}>Uploading...</p>
+              <div style={{ backgroundColor: '#e0d9cf', borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#9c8f80', transition: 'width 0.3s ease', borderRadius: '999px' }} />
               </div>
-              <p className="text-sm text-gray-500">{progress}%</p>
+              <p style={{ color: '#b0a090', fontSize: '0.8rem' }}>{progress}%</p>
             </div>
           ) : isDragActive ? (
-            <p className="text-blue-600 font-medium">Drop it here!</p>
+            <div>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>↓</div>
+              <p style={{ color: '#7a6f62', fontWeight: 500, fontSize: '0.95rem' }}>Release to upload</p>
+            </div>
           ) : (
-            <>
-              <p className="text-gray-700 font-medium mb-1">Drag & drop your file here</p>
-              <p className="text-gray-400 text-sm">or click to browse</p>
-            </>
+            <div>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.5 }}>⬆</div>
+              <p style={{ color: '#5a5048', fontWeight: 500, fontSize: '0.95rem', marginBottom: '0.35rem' }}>
+                Drag & drop your file here
+              </p>
+              <p style={{ color: '#b0a090', fontSize: '0.82rem' }}>or click to browse</p>
+            </div>
           )}
         </div>
 
         {fileError && (
-          <p className="mt-4 text-sm text-red-600 text-center">⚠️ {fileError}</p>
+          <p style={{ color: '#8b3a2f', fontSize: '0.82rem', marginTop: '1rem' }}>{fileError}</p>
         )}
 
-        <div className="mt-6 flex justify-center gap-6 text-xs text-gray-400">
-          <span>✓ CSV files</span>
-          <span>✓ Excel (.xlsx)</span>
-          <span>✓ Up to 50 MB</span>
+        <div style={{ color: '#c8b89a', fontSize: '0.75rem', letterSpacing: '0.06em' }} className="mt-8 flex justify-center gap-8 uppercase">
+          <span>CSV</span>
+          <span>Excel .xlsx</span>
+          <span>Up to 50 MB</span>
         </div>
       </div>
     </div>

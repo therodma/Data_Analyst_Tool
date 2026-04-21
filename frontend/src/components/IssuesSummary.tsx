@@ -1,43 +1,23 @@
 import type { UploadData, AnalysisData, ColumnInfo } from '../App'
 
-type Props = {
-  uploadData: UploadData
-  analysis: AnalysisData
-  onNext: () => void
-}
+type Props = { uploadData: UploadData; analysis: AnalysisData; onNext: () => void }
 
-function IssueCard({
-  icon,
-  label,
-  value,
-  flagged,
-}: {
-  icon: string
-  label: string
-  value: string
-  flagged?: boolean
-}) {
+const card = { backgroundColor: '#faf8f5', border: '1px solid #e0d9cf', borderRadius: '12px', padding: '1.1rem' }
+const flaggedCard = { backgroundColor: '#fdf6ee', border: '1px solid #e8d5b7', borderRadius: '12px', padding: '1.1rem' }
+const label = { fontSize: '0.72rem', color: '#9c8f80', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginTop: '0.25rem' }
+const val = (flagged: boolean) => ({ fontSize: '1.5rem', fontWeight: 600, color: flagged ? '#a0622a' : '#2c2c2c', fontFamily: 'Playfair Display, serif' })
+
+function IssueCard({ label: l, value, flagged }: { label: string; value: string; flagged?: boolean }) {
   return (
-    <div
-      className={`rounded-xl p-4 border ${
-        flagged ? 'border-orange-200 bg-orange-50' : 'border-gray-200 bg-white'
-      }`}
-    >
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className={`text-xl font-bold ${flagged ? 'text-orange-600' : 'text-gray-800'}`}>
-        {value}
-      </div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+    <div style={flagged ? flaggedCard : card}>
+      <div style={val(!!flagged)}>{value}</div>
+      <div style={label}>{l}</div>
     </div>
   )
 }
 
 function countIssues(cols: Record<string, ColumnInfo>) {
-  let missingFlagged = 0,
-    outlierCols = 0,
-    skewedCols = 0,
-    variantCols = 0
-
+  let missingFlagged = 0, outlierCols = 0, skewedCols = 0, variantCols = 0
   for (const info of Object.values(cols)) {
     if (info.missing_flagged) missingFlagged++
     if (info.outliers && info.outliers.count > 0) outlierCols++
@@ -47,128 +27,84 @@ function countIssues(cols: Record<string, ColumnInfo>) {
   return { missingFlagged, outlierCols, skewedCols, variantCols }
 }
 
+const sectionLabel = { fontSize: '0.72rem', color: '#9c8f80', textTransform: 'uppercase' as const, letterSpacing: '0.1em', fontWeight: 500, marginBottom: '0.75rem' }
+const tableHeader = { padding: '0.65rem 1rem', fontSize: '0.7rem', color: '#9c8f80', textTransform: 'uppercase' as const, letterSpacing: '0.07em', fontWeight: 500, textAlign: 'left' as const, backgroundColor: '#f5f1ec', borderBottom: '1px solid #e0d9cf' }
+const tableCell = { padding: '0.6rem 1rem', fontSize: '0.82rem', color: '#5a5048', borderBottom: '1px solid #f0ebe3' }
+
 export default function IssuesSummary({ uploadData, analysis, onNext }: Props) {
   const { missingFlagged, outlierCols, skewedCols, variantCols } = countIssues(analysis.columns)
   const totalIssues = missingFlagged + outlierCols + skewedCols + variantCols + (analysis.duplicates.exact_count > 0 ? 1 : 0)
 
   return (
     <div className="space-y-8">
-      {/* File info */}
-      <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200">
-        <span className="text-2xl">📊</span>
-        <div>
-          <p className="font-semibold text-gray-800">{uploadData.filename}</p>
-          <p className="text-sm text-gray-500">
-            {analysis.shape.rows.toLocaleString()} rows × {analysis.shape.cols} columns
+      {/* File info bar */}
+      <div style={{ backgroundColor: '#faf8f5', border: '1px solid #e0d9cf', borderRadius: '12px', padding: '1rem 1.25rem' }}
+        className="flex items-center gap-3">
+        <div className="flex-1">
+          <p style={{ fontWeight: 500, color: '#2c2c2c', fontSize: '0.9rem' }}>{uploadData.filename}</p>
+          <p style={{ color: '#9c8f80', fontSize: '0.78rem', marginTop: '0.1rem' }}>
+            {analysis.shape.rows.toLocaleString()} rows · {analysis.shape.cols} columns
           </p>
         </div>
-        <div className="ml-auto">
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              totalIssues > 0 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'
-            }`}
-          >
-            {totalIssues} issue{totalIssues !== 1 ? 's' : ''} found
-          </span>
-        </div>
+        <span style={{
+          padding: '0.25rem 0.85rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 500,
+          backgroundColor: totalIssues > 0 ? '#fdf6ee' : '#f0f7f0',
+          color: totalIssues > 0 ? '#a0622a' : '#3a7a4a',
+          border: `1px solid ${totalIssues > 0 ? '#e8d5b7' : '#b8d9be'}`,
+        }}>
+          {totalIssues} issue{totalIssues !== 1 ? 's' : ''} detected
+        </span>
       </div>
 
       {/* Issue cards */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Detected Issues
-        </h3>
+        <p style={sectionLabel}>Detected Issues</p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <IssueCard
-            icon="🔲"
-            label="Cols with >20% missing"
-            value={String(missingFlagged)}
-            flagged={missingFlagged > 0}
-          />
-          <IssueCard
-            icon="👯"
-            label="Duplicate rows"
-            value={String(analysis.duplicates.exact_count)}
-            flagged={analysis.duplicates.exact_count > 0}
-          />
-          <IssueCard
-            icon="📍"
-            label="Cols with outliers"
-            value={String(outlierCols)}
-            flagged={outlierCols > 0}
-          />
-          <IssueCard
-            icon="📐"
-            label="Skewed columns"
-            value={String(skewedCols)}
-            flagged={skewedCols > 0}
-          />
-          <IssueCard
-            icon="🔤"
-            label="Category variants"
-            value={String(variantCols)}
-            flagged={variantCols > 0}
-          />
+          <IssueCard label="Missing >20%" value={String(missingFlagged)} flagged={missingFlagged > 0} />
+          <IssueCard label="Duplicate rows" value={String(analysis.duplicates.exact_count)} flagged={analysis.duplicates.exact_count > 0} />
+          <IssueCard label="Outlier columns" value={String(outlierCols)} flagged={outlierCols > 0} />
+          <IssueCard label="Skewed columns" value={String(skewedCols)} flagged={skewedCols > 0} />
+          <IssueCard label="Category variants" value={String(variantCols)} flagged={variantCols > 0} />
         </div>
       </div>
 
-      {/* Per-column breakdown */}
+      {/* Column details table */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Column Details
-        </h3>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <p style={sectionLabel}>Column Details</p>
+        <div style={{ backgroundColor: '#faf8f5', border: '1px solid #e0d9cf', borderRadius: '12px', overflow: 'hidden' }}>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
                 <tr>
-                  {['Column', 'Type', 'Missing', 'Outliers', 'Skew', 'Categories'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                      {h}
-                    </th>
+                  {['Column', 'Type', 'Missing', 'Outliers', 'Skew', 'Categories'].map(h => (
+                    <th key={h} style={tableHeader}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {Object.entries(analysis.columns).map(([col, info]) => (
-                  <tr key={col} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-800 max-w-[150px] truncate">{col}</td>
-                    <td className="px-4 py-3 text-gray-500">
-                      <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{info.dtype}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={info.missing_flagged ? 'text-orange-600 font-semibold' : 'text-gray-600'}>
-                        {info.missing_count} ({info.missing_pct}%)
+                  <tr key={col} style={{ transition: 'background 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f5f1ec')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    <td style={{ ...tableCell, fontWeight: 500, color: '#2c2c2c' }}>{col}</td>
+                    <td style={tableCell}>
+                      <span style={{ backgroundColor: '#ede8e0', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', color: '#7a6f62' }}>
+                        {info.dtype}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {info.outliers ? (
-                        <span className={info.outliers.count > 0 ? 'text-orange-600 font-semibold' : ''}>
-                          {info.outliers.count}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
+                    <td style={{ ...tableCell, color: info.missing_flagged ? '#a0622a' : '#5a5048', fontWeight: info.missing_flagged ? 500 : 400 }}>
+                      {info.missing_count} ({info.missing_pct}%)
                     </td>
-                    <td className="px-4 py-3">
-                      {info.skewness !== null ? (
-                        <span className={info.skew_flagged ? 'text-orange-600 font-semibold' : 'text-gray-600'}>
-                          {info.skewness}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
+                    <td style={{ ...tableCell, color: info.outliers && info.outliers.count > 0 ? '#a0622a' : '#5a5048', fontWeight: info.outliers && info.outliers.count > 0 ? 500 : 400 }}>
+                      {info.outliers ? info.outliers.count : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {info.categories ? (
-                        <span className={info.categories.suspected_variants.length > 0 ? 'text-orange-600 font-semibold' : ''}>
-                          {info.categories.unique_count} unique
-                          {info.categories.suspected_variants.length > 0 &&
-                            ` · ${info.categories.suspected_variants.length} variant group(s)`}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
+                    <td style={{ ...tableCell, color: info.skew_flagged ? '#a0622a' : '#5a5048', fontWeight: info.skew_flagged ? 500 : 400 }}>
+                      {info.skewness !== null ? info.skewness : '—'}
+                    </td>
+                    <td style={{ ...tableCell, color: info.categories?.suspected_variants?.length ? '#a0622a' : '#5a5048', fontWeight: info.categories?.suspected_variants?.length ? 500 : 400 }}>
+                      {info.categories
+                        ? `${info.categories.unique_count} unique${info.categories.suspected_variants.length > 0 ? ` · ${info.categories.suspected_variants.length} variant(s)` : ''}`
+                        : '—'}
                     </td>
                   </tr>
                 ))}
@@ -180,27 +116,25 @@ export default function IssuesSummary({ uploadData, analysis, onNext }: Props) {
 
       {/* Data preview */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Data Preview (first 10 rows)
-        </h3>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <p style={sectionLabel}>Data Preview — first 10 rows</p>
+        <div style={{ backgroundColor: '#faf8f5', border: '1px solid #e0d9cf', borderRadius: '12px', overflow: 'hidden' }}>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
                 <tr>
-                  {uploadData.columns.map((col) => (
-                    <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
-                      {col}
-                    </th>
+                  {uploadData.columns.map(col => (
+                    <th key={col} style={{ ...tableHeader, whiteSpace: 'nowrap' }}>{col}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {uploadData.preview.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    {uploadData.columns.map((col) => (
-                      <td key={col} className="px-4 py-2 text-gray-700 max-w-[150px] truncate">
-                        {row[col] === '' ? <span className="text-gray-300 italic">null</span> : row[col]}
+                  <tr key={i}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f5f1ec')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    {uploadData.columns.map(col => (
+                      <td key={col} style={{ ...tableCell, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row[col] === '' ? <span style={{ color: '#c8b89a', fontStyle: 'italic' }}>null</span> : row[col]}
                       </td>
                     ))}
                   </tr>
@@ -214,7 +148,9 @@ export default function IssuesSummary({ uploadData, analysis, onNext }: Props) {
       <div className="flex justify-end">
         <button
           onClick={onNext}
-          className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          style={{ backgroundColor: '#2c2c2c', color: '#f7f4ef', padding: '0.7rem 1.75rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, border: 'none', cursor: 'pointer', letterSpacing: '0.02em', transition: 'background 0.2s' }}
+          onMouseEnter={e => ((e.target as HTMLButtonElement).style.backgroundColor = '#444')}
+          onMouseLeave={e => ((e.target as HTMLButtonElement).style.backgroundColor = '#2c2c2c')}
         >
           Configure Cleaning →
         </button>
