@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, File, UploadFile, HTTPException, Body, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -176,7 +176,6 @@ async def clean_file(body: dict = Body(...)):
 
     cleaned_path = _session_dir(session_id) / "cleaned.csv"
     cleaned_df.to_csv(cleaned_path, index=False)
-    (session_dir / "cleaned_filename.txt").write_text(cleaned_filename) if (session_dir := _session_dir(session_id)) else None
 
     before_stats = _compute_stats(df)
     after_stats = _compute_stats(cleaned_df)
