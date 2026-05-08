@@ -130,19 +130,26 @@ Rules:
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.3-70b-instruct:free',
-          messages: [{ role: 'user', content: PROMPT(csvText, questions) }],
-        }),
-      })
+      let res, attempts = 0
+      while (attempts < 3) {
+        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'meta-llama/llama-3.3-70b-instruct:free',
+            messages: [{ role: 'user', content: PROMPT(csvText, questions) }],
+          }),
+        })
+        if (res.status !== 429) break
+        attempts++
+        await new Promise(r => setTimeout(r, 2000 * attempts))
+      }
       if (!res.ok) {
         const err = await res.json()
+        if (res.status === 429) throw new Error('The free AI model is busy — please wait a moment and try again.')
         throw new Error(err.error?.message || `API error ${res.status}`)
       }
       const data = await res.json()
