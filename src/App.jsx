@@ -65,11 +65,22 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploading, setUploading] = useState(false)
   const fileRef = useRef()
 
   const readFile = (file) => {
+    setUploading(true)
+    setUploadProgress(0)
     const reader = new FileReader()
-    reader.onload = (e) => setCsvText(e.target.result)
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 90))
+    }
+    reader.onload = (e) => {
+      setCsvText(e.target.result)
+      setUploadProgress(100)
+      setTimeout(() => { setUploading(false); setUploadProgress(0) }, 800)
+    }
     reader.readAsText(file)
   }
 
@@ -169,6 +180,23 @@ Rules:
               <p className="text-slate-400 text-sm">Drag & drop a CSV/TSV file here, or <span className="text-indigo-500 font-600">click to browse</span></p>
               <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" className="hidden" onChange={e => e.target.files[0] && readFile(e.target.files[0])} />
             </div>
+            {uploading && (
+              <div className="mt-3">
+                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            {!uploading && uploadProgress === 0 && csvText && (
+              <p className="mt-2 text-xs text-emerald-500">✓ File loaded</p>
+            )}
           </div>
 
           {/* Paste CSV */}
