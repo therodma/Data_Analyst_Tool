@@ -119,12 +119,15 @@ Rules:
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_KEY}`, {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: PROMPT(csvText, questions) }] }],
-          generationConfig: { responseMimeType: 'application/json' },
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
+          messages: [{ role: 'user', content: PROMPT(csvText, questions) }],
         }),
       })
       if (!res.ok) {
@@ -132,7 +135,7 @@ Rules:
         throw new Error(err.error?.message || `API error ${res.status}`)
       }
       const data = await res.json()
-      const text = data.candidates[0].content.parts[0].text.trim()
+      const text = data.choices[0].message.content.trim()
       const json = JSON.parse(text.startsWith('{') ? text : text.slice(text.indexOf('{')))
       setDashboard(json)
     } catch (e) {
