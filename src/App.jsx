@@ -126,7 +126,7 @@ Rules:
           'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free',
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
           messages: [{ role: 'user', content: PROMPT(csvText, questions) }],
         }),
       })
