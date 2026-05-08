@@ -61,7 +61,6 @@ function MetricCard({ card }) {
 export default function App() {
   const [csvText, setCsvText] = useState('')
   const [questions, setQuestions] = useState('')
-  const [apiKey, setApiKey] = useState('')
   const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -117,7 +116,6 @@ Rules:
 
   const generate = async () => {
     if (!csvText.trim()) return setError('Please provide CSV data.')
-    if (!apiKey.trim()) return setError('Please enter your Anthropic API key.')
     setError('')
     setLoading(true)
     try {
@@ -125,7 +123,7 @@ Rules:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
@@ -161,18 +159,6 @@ Rules:
 
         {/* Input Panel */}
         <div className="bg-white rounded-3xl shadow-sm border border-indigo-100 p-8 mb-8 space-y-6">
-          {/* API Key */}
-          <div>
-            <label className="block text-sm font-600 text-slate-700 mb-2">Anthropic API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50"
-            />
-          </div>
-
           {/* Drop Zone */}
           <div>
             <label className="block text-sm font-600 text-slate-700 mb-2">Upload CSV / TSV File</label>
