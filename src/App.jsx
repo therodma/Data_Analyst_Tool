@@ -119,18 +119,12 @@ Rules:
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_KEY}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 4096,
-          messages: [{ role: 'user', content: PROMPT(csvText, questions) }],
+          contents: [{ parts: [{ text: PROMPT(csvText, questions) }] }],
+          generationConfig: { responseMimeType: 'application/json' },
         }),
       })
       if (!res.ok) {
@@ -138,7 +132,7 @@ Rules:
         throw new Error(err.error?.message || `API error ${res.status}`)
       }
       const data = await res.json()
-      const text = data.content[0].text.trim()
+      const text = data.candidates[0].content.parts[0].text.trim()
       const json = JSON.parse(text.startsWith('{') ? text : text.slice(text.indexOf('{')))
       setDashboard(json)
     } catch (e) {
